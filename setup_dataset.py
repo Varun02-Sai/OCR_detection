@@ -21,11 +21,14 @@ def setup_kaggle_dataset():
     dataset_path = kagglehub.dataset_download('siddhi17/road-crossing-dataset')
     print(f"Downloaded to {dataset_path}")
     
-    # Find all mp4 videos in the dataset
-    all_videos = glob.glob(f"{dataset_path}/**/*.mp4", recursive=True)
+    # Find all videos in the dataset (case-insensitive for extensions)
+    exts = ['*.mp4', '*.MP4', '*.avi', '*.AVI', '*.mov', '*.MOV', '*.mkv']
+    all_videos = []
+    for ext in exts:
+        all_videos.extend(glob.glob(f"{dataset_path}/**/{ext}", recursive=True))
     
     if not all_videos:
-        print("No mp4 videos found in the dataset.")
+        print("No videos found in the dataset! Try manually checking the Kaggle dataset contents.")
         return
         
     # Sort videos by file size descending (to get the highest quality/longest ones)

@@ -272,7 +272,7 @@ class OCREnsemble:
         try:
             from paddleocr import PaddleOCR
             self.engines["paddleocr"] = PaddleOCR(
-                use_angle_cls=True, lang="en", show_log=False
+                use_angle_cls=True, lang="en"
             )
             logger.info("OCR engine loaded    : PaddleOCR")
         except Exception as e:
