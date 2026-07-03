@@ -27,13 +27,21 @@ def process_video_gradio(video_path):
     
     # Find the generated outputs
     vid_name = Path(video_path).stem
-    out_vid = cfg.OUTPUT_DIR / f"detected_{vid_name}.mp4"
+    raw_vid = cfg.OUTPUT_DIR / f"detected_{vid_name}.mp4"
     out_csv = cfg.CSV_DIR / f"plates_{vid_name}.csv"
     
-    if not out_vid.exists() or not out_csv.exists():
+    if not raw_vid.exists() or not out_csv.exists():
         raise gr.Error("Processing failed or generated no output.")
+
+    # Convert to browser-compatible H.264 using FFmpeg
+    import subprocess
+    web_vid = cfg.OUTPUT_DIR / f"web_{vid_name}.mp4"
+    print("Converting video for web browser compatibility...")
+    subprocess.run(["ffmpeg", "-y", "-i", str(raw_vid), "-vcodec", "libx264", str(web_vid)], capture_output=True)
+    
+    final_vid = str(web_vid) if web_vid.exists() else str(raw_vid)
         
-    return str(out_vid), str(out_csv)
+    return final_vid, str(out_csv)
 
 # ---------------------------------------------------------
 # Build the Gradio UI
