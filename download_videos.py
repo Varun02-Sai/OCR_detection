@@ -8,11 +8,11 @@ def download_videos():
     
     # Use yt-dlp to search and download 20 short traffic camera videos
     # Limiting duration to < 60 seconds to avoid huge downloads and slow processing
-    search_query = 'ytsearch20:nyc traffic camera intersection CCTV vehicles'
+    search_query = 'ytsearch20:"indian national highway" traffic cctv 4k -vlog -news'
     command = [
         "python", "-m", "yt_dlp",
         "-f", "bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/mp4",
-        "--output", f"{output_dir}/nyc_traffic_%(autonumber)s.%(ext)s",
+        "--output", f"{output_dir}/nh_traffic_%(autonumber)s.%(ext)s",
         "--match-filter", "duration < 90",
         search_query
     ]
