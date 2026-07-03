@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+.env
+
+# Large Model Weights (Github blocks files > 100MB)
+*.pt
+models/*.pt
+
+# Video files (Too large for Git)
+*.mp4
+*.avi
+*.mov
+input_videos/
+output_videos/
+temp_gradio_out/
+
+# CSV Outputs
+output_csv/
+temp_gradio_csv/
+
+# Logs
+*.log
