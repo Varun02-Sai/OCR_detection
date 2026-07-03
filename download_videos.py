@@ -6,18 +6,18 @@ def download_videos():
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
-    # Use yt-dlp to search and download 10 short traffic/dashcam videos
-    # Limiting duration to < 300 seconds (5 mins) to avoid huge downloads
-    search_query = 'ytsearch10:dashcam traffic license plates'
+    # Use yt-dlp to search and download 20 short traffic camera videos
+    # Limiting duration to < 60 seconds to avoid huge downloads and slow processing
+    search_query = 'ytsearch20:nyc traffic camera intersection CCTV vehicles'
     command = [
         "python", "-m", "yt_dlp",
         "-f", "bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/mp4",
-        "--output", f"{output_dir}/video_%(autonumber)s.%(ext)s",
-        "--match-filter", "duration < 300",
+        "--output", f"{output_dir}/nyc_traffic_%(autonumber)s.%(ext)s",
+        "--match-filter", "duration < 90",
         search_query
     ]
     
-    print("Downloading 10 traffic videos from YouTube. This may take a few minutes...")
+    print("Downloading 20 NYC traffic camera videos from YouTube. This may take a few minutes...")
     try:
         subprocess.run(command, check=True)
         print("Download complete!")
