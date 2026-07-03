@@ -42,10 +42,13 @@ class Config:
     MODELS_DIR = Path("models")
     LP_MODEL_PATH = MODELS_DIR / "yolov8n_lp.pt"
     VEHICLE_MODELS = {
-        "yolov8m":  "yolov8m.pt",
-        "yolov10n": "yolov10n.pt",
-        "rtdetr":   "rtdetr-l.pt",
+        # "yolov8m":  "yolov8m.pt",   # Disabled for speed
+        "yolov10n": "yolov10n.pt",  # Ultra-fast NMS-free model
+        # "rtdetr":   "rtdetr-l.pt",  # Disabled for speed (too heavy)
     }
+
+    # -- Processing Speed --
+    PROCESS_EVERY_N_FRAMES = 2  # Process every 2nd frame to double speed
 
     # -- Detection thresholds --
     LP_CONF = 0.25          # license-plate detector confidence
@@ -276,13 +279,14 @@ class OCREnsemble:
             logger.warning("PaddleOCR unavailable: %s", e)
 
         # -- Tesseract --
-        try:
-            import pytesseract
-            pytesseract.get_tesseract_version()
-            self.engines["tesseract"] = pytesseract
-            logger.info("OCR engine loaded    : Tesseract")
-        except Exception as e:
-            logger.warning("Tesseract unavailable: %s", e)
+        # Disabled for speed (runs entirely on CPU and bottlenecks the GPU pipeline)
+        # try:
+        #     import pytesseract
+        #     pytesseract.get_tesseract_version()
+        #     self.engines["tesseract"] = pytesseract
+        #     logger.info("OCR engine loaded    : Tesseract")
+        # except Exception as e:
+        #     logger.warning("Tesseract unavailable: %s", e)
 
         if not self.engines:
             logger.error("[WARN] No OCR engines loaded - text recognition disabled")
@@ -468,47 +472,49 @@ class VideoProcessor:
         logger.info("Resolution : %dx%d  FPS: %d  Frames: %d", w, h, fps, total)
 
         n = 0
+        last_tracked = []
         while cap.isOpened():
             ok, frame = cap.read()
             if not ok:
                 break
             n += 1
 
-            # 1) enhance
-            enhanced = self.enhancer.enhance_frame(frame)
+            if n % self.cfg.PROCESS_EVERY_N_FRAMES == 0:
+                # 1) enhance
+                enhanced = self.enhancer.enhance_frame(frame)
 
-            # 2) detect (multi-model ensemble)
-            dets = self.detector.detect(enhanced)
+                # 2) detect (multi-model ensemble)
+                dets = self.detector.detect(enhanced)
 
-            # 3) OCR each plate
-            for d in dets:
-                x1, y1, x2, y2 = d["bbox"]
-                crop = frame[y1:y2, x1:x2]
-                if crop.size == 0:
-                    d["text"] = ""
-                    d["votes"] = {}
-                    continue
-                gray = self.enhancer.enhance_plate(crop)
-                ocr_res = self.ocr.recognize(crop, gray)
-                d["text"] = ocr_res["text"]
-                d["votes"] = ocr_res["votes"]
+                # 3) OCR each plate
+                for d in dets:
+                    x1, y1, x2, y2 = d["bbox"]
+                    crop = frame[y1:y2, x1:x2]
+                    if crop.size == 0:
+                        d["text"] = ""
+                        d["votes"] = {}
+                        continue
+                    gray = self.enhancer.enhance_plate(crop)
+                    ocr_res = self.ocr.recognize(crop, gray)
+                    d["text"] = ocr_res["text"]
+                    d["votes"] = ocr_res["votes"]
 
-            # 4) track
-            tracked = self.tracker.update(dets, n)
+                # 4) track
+                last_tracked = self.tracker.update(dets, n)
 
-            # 5) CSV log
-            ts = n / fps
-            for t in tracked:
-                v = t.get("votes", {})
-                csv_w.writerow([
-                    n, f"{ts:.2f}", t["track_id"], t["text"],
-                    t["stable_text"], f'{t["conf"]:.3f}', *t["bbox"],
-                    v.get("easyocr", ""), v.get("paddleocr", ""),
-                    v.get("tesseract", ""),
-                ])
+                # 5) CSV log
+                ts = n / fps
+                for t in last_tracked:
+                    v = t.get("votes", {})
+                    csv_w.writerow([
+                        n, f"{ts:.2f}", t["track_id"], t["text"],
+                        t["stable_text"], f'{t["conf"]:.3f}', *t["bbox"],
+                        v.get("easyocr", ""), v.get("paddleocr", ""),
+                        v.get("tesseract", ""),
+                    ])
 
-            # 6) annotate + write
-            writer.write(self._draw(frame.copy(), tracked))
+            # 6) annotate + write EVERY frame (using latest tracked boxes)
+            writer.write(self._draw(frame.copy(), last_tracked))
 
             if n % 30 == 0:
                 pct = 100 * n / max(total, 1)
