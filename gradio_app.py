@@ -3,6 +3,13 @@ import os
 import shutil
 from pathlib import Path
 
+# Auto-download the Kaggle dataset if we don't have it yet
+try:
+    import setup_dataset
+    setup_dataset.setup_kaggle_dataset()
+except Exception as e:
+    print(f"Warning: Could not auto-download Kaggle dataset: {e}")
+
 # Import our existing pipeline
 from main import Config, VideoProcessor
 

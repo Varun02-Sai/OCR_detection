@@ -8,5 +8,5 @@ paddlepaddle
 paddleocr
 pytesseract
 ensemble-boxes
-
 gradio
+kagglehub
