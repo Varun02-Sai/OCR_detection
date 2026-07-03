@@ -42,7 +42,7 @@ class Config:
     MODELS_DIR = Path("models")
     LP_MODEL_PATH = MODELS_DIR / "yolov8n_lp.pt"
     VEHICLE_MODELS = {
-        # "yolov8m":  "yolov8m.pt",   # Disabled for speed
+        "yolov8m":  "yolov8m.pt",   # Medium, highly accurate
         "yolov10n": "yolov10n.pt",  # Ultra-fast NMS-free model
         # "rtdetr":   "rtdetr-l.pt",  # Disabled for speed (too heavy)
     }
