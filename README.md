@@ -1,59 +1,35 @@
 # Multi-Model Vehicle OCR Number Plate Detection
 
-A robust, production-grade ANPR (Automatic Number Plate Recognition) pipeline
-designed for **CCTV / traffic camera footage** (police project).
+A robust, highly optimized ANPR (Automatic Number Plate Recognition) pipeline designed specifically for CCTV and traffic camera footage.
 
 ## Architecture
 
+Our pipeline employs an advanced "multi-model ensemble" approach to guarantee maximum accuracy on fast-moving vehicles.
+
 | Component | Models | Purpose |
 |-----------|--------|---------|
-| **Detection Ensemble** | YOLOv8n (LP fine-tuned), YOLOv8m, YOLOv10n, RT-DETR | Find license plates via Weighted Box Fusion |
-| **OCR Ensemble** | EasyOCR, PaddleOCR, Tesseract | Read plate text via majority voting |
-| **Image Enhancement** | CLAHE + Bilateral Denoise + Unsharp Mask | Handle low-quality / night CCTV footage |
-| **Plate Tracker** | IoU-based frame-to-frame tracker | Stabilise text across frames |
+| **Detection Ensemble** | YOLOv8m + YOLOv10n | Uses Weighted Box Fusion (WBF) to combine bounding boxes from multiple AI models, balancing speed (v10n) with high accuracy (v8m). |
+| **Plate Localization** | YOLOv8n (Fine-tuned) | Specifically trained to crop license plates accurately. |
+| **OCR Ensemble** | PaddleOCR + EasyOCR | Reads plate text using multiple optical engines and implements majority-voting to filter out errors. |
+| **Image Enhancement** | CLAHE + Denoising | Dynamically handles low-quality and night-time CCTV footage. |
+| **Plate Tracker** | History Buffer Algorithm | Stabilizes text across multiple frames so the output is locked onto the vehicle. |
 
-## Quick Start
+## Quick Start on Google Colab (GPU Recommended)
 
+Due to the heavy multi-model architecture, this project is designed to run seamlessly on a Cloud GPU.
+
+1. Open the project in Google Colab.
+2. Run the following setup commands:
 ```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-
-# 2. Download all pretrained models
-python models/download_models.py
-
-# 3. Run the pipeline on all videos in input_videos/
-python main.py
-
-# Or process a single video
-python main.py --video input_videos/my_video.mp4
+!pip install -r requirements.txt
+!python setup_dataset.py
+!python gradio_app.py
 ```
+3. Click the Gradio Web Server link that appears to upload videos and view real-time AI processing!
+
+## Dataset
+The system uses the `car-number-plate-video` dataset automatically provisioned via KaggleHub for high-quality testing data.
 
 ## Output
-
-- **Annotated videos** → `output_videos/`  (bounding boxes + OCR text overlay)
-- **CSV logs** → `output_csv/`  (frame-by-frame plate text, timestamps, per-engine votes)
-
-## Training Your Own Models (Optional)
-
-If the pretrained weights don't work well for your region's plates:
-
-1. Get a [Roboflow](https://roboflow.com) API key
-2. Upload `train_lightning.py` to [Lightning AI](https://lightning.ai)
-3. Run it on a GPU instance
-4. Copy the generated `best.pt` files into the `models/` directory
-
-## Project Structure
-
-```
-OCR_detection/
-├── main.py                    # Multi-model detection + OCR pipeline
-├── train_lightning.py         # Training script for Lightning AI
-├── requirements.txt           # Python dependencies
-├── README.md
-├── models/
-│   ├── download_models.py     # Downloads all pretrained weights
-│   └── yolov8n_lp.pt         # Fine-tuned LP detector (auto-downloaded)
-├── input_videos/              # Place your CCTV footage here
-├── output_videos/             # Annotated output videos
-└── output_csv/                # Per-frame plate detection logs
-```
+- **Annotated videos**: Real-time bounding boxes and OCR text overlay.
+- **CSV logs**: Frame-by-frame plate text, timestamps, and per-engine votes.
