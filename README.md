@@ -1,35 +1,54 @@
-# Multi-Model Vehicle OCR Number Plate Detection
+# Multi-Model Automatic Number Plate Recognition (ANPR)
 
-A robust, highly optimized ANPR (Automatic Number Plate Recognition) pipeline designed specifically for CCTV and traffic camera footage.
+A production-grade, highly optimized ANPR pipeline designed for CCTV, toll gate, and traffic camera footage.
 
 ## Architecture
 
-Our pipeline employs an advanced "multi-model ensemble" approach to guarantee maximum accuracy on fast-moving vehicles.
+This pipeline uses a **3-model detection ensemble** combined with **GPU-accelerated PaddleOCR** for maximum accuracy and speed on fast-moving vehicles.
 
-| Component | Models | Purpose |
-|-----------|--------|---------|
-| **Detection Ensemble** | YOLOv8m + YOLOv10n | Uses Weighted Box Fusion (WBF) to combine bounding boxes from multiple AI models, balancing speed (v10n) with high accuracy (v8m). |
-| **Plate Localization** | YOLOv8n (Fine-tuned) | Specifically trained to crop license plates accurately. |
-| **OCR Ensemble** | PaddleOCR + EasyOCR | Reads plate text using multiple optical engines and implements majority-voting to filter out errors. |
-| **Image Enhancement** | CLAHE + Denoising | Dynamically handles low-quality and night-time CCTV footage. |
-| **Plate Tracker** | History Buffer Algorithm | Stabilizes text across multiple frames so the output is locked onto the vehicle. |
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| **Plate Detection** | YOLOv8n (Fine-tuned) | Specifically trained to crop license plates accurately. |
+| **Vehicle Detection 1** | YOLOv8m (COCO) | Medium model: catches distant/small vehicles. |
+| **Vehicle Detection 2** | YOLO11s (COCO) | Modern small model: highly accurate on small objects. |
+| **OCR Engine** | PaddleOCR | Industry-standard OCR engine for accurate text extraction (GPU optimized). |
+| **Image Enhancement** | CLAHE + Bilateral Denoising | Dynamically handles low-quality, glared, or night-time CCTV footage. |
+| **Tracking Engine** | IoU + History Buffer | Tracks vehicles across frames and stabilises the recognized text. |
 
-## Quick Start on Google Colab (GPU Recommended)
+## Quick Start (Google Colab / Cloud GPU)
 
-Due to the heavy multi-model architecture, this project is designed to run seamlessly on a Cloud GPU.
+For the best performance, run this on a GPU instance (like a Google Colab T4).
 
-1. Open the project in Google Colab.
-2. Run the following setup commands:
+1. Open `Run_on_Colab.ipynb` in Google Colab.
+2. The notebook will automatically:
+   - Install dependencies
+   - Download the AI models
+   - Download 3 high-quality test videos (toll gate, traffic camera, highway)
+   - Launch the Gradio Web UI
+
+## Local Installation
+
+If you have a local GPU (Nvidia) or want to test on CPU:
+
 ```bash
-!pip install -r requirements.txt
-!python setup_dataset.py
-!python gradio_app.py
+# 1. Install requirements
+pip install -r requirements.txt
+
+# 2. Download Models
+python models/download_models.py
+
+# 3. (Optional) Download Test Videos
+python download_samples.py
+
+# 4. Launch the Web Interface
+python gradio_app.py
 ```
-3. Click the Gradio Web Server link that appears to upload videos and view real-time AI processing!
 
-## Dataset
-The system uses the `car-number-plate-video` dataset automatically provisioned via KaggleHub for high-quality testing data.
+## Command Line Usage
 
-## Output
-- **Annotated videos**: Real-time bounding boxes and OCR text overlay.
-- **CSV logs**: Frame-by-frame plate text, timestamps, and per-engine votes.
+To process a video without the UI:
+```bash
+python main.py --video path/to/your_video.mp4
+```
+
+The output will be saved in `output_videos/` and a detailed CSV log will be generated in `output_csv/`.

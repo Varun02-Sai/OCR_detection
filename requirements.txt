@@ -1,12 +1,8 @@
 ultralytics
-easyocr
 opencv-python
-torch
-torchvision
-yt-dlp
 paddlepaddle
 paddleocr
-pytesseract
-ensemble-boxes
 gradio
-kagglehub
+yt-dlp
+torch
+torchvision

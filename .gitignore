@@ -1,26 +1,46 @@
 # Python
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
 
 # Virtual environments
 venv/
+env/
 .env
 
-# Large Model Weights (Github blocks files > 100MB)
+# Model Weights (too large for Git)
 *.pt
 models/*.pt
 
-# Video files (Too large for Git)
+# Video files
 *.mp4
 *.avi
 *.mov
+*.mkv
+*.webm
+sample_videos/
 input_videos/
 output_videos/
 temp_gradio_out/
 
-# CSV Outputs
+# Output data
 output_csv/
 temp_gradio_csv/
 
+# Gradio
+.gradio/
+flagged/
+
+# Training runs
+runs/
+wandb/
+
 # Logs
 *.log
+
+# IDE
+.vscode/
+.idea/

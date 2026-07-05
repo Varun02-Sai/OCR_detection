@@ -1,48 +1,49 @@
 """
-Download all pretrained model weights for the multi-model ANPR pipeline.
+Download pretrained model weights for the ANPR pipeline.
 
 Models:
-  1. YOLOv8n  - Fine-tuned for license plate detection (Hugging Face)
-  2. YOLOv8m  - COCO pretrained (vehicle detection) [Ultralytics auto-download]
-  3. YOLOv10n - COCO pretrained (vehicle detection) [Ultralytics auto-download]
-  4. RT-DETR-l - COCO pretrained (vehicle detection) [Ultralytics auto-download]
+  1. YOLOv8n  - Fine-tuned for license plate detection (from HuggingFace)
+  2. YOLOv8m  - COCO pretrained vehicle detection (Ultralytics auto-download)
+  3. YOLO11s  - COCO pretrained vehicle detection (Ultralytics auto-download)
 """
 
 import os
 import urllib.request
 from pathlib import Path
 
-MODELS_DIR = Path("models")
+# Use __file__ for reliable path resolution
+BASE_DIR = Path(__file__).resolve().parent.parent
+MODELS_DIR = Path(__file__).resolve().parent
 
-# -- Model definitions --
-MODELS = {
+HF_MODELS = {
     "yolov8n_lp.pt": {
         "url": "https://huggingface.co/Koushim/yolov8-license-plate-detection/resolve/main/best.pt",
-        "description": "YOLOv8 Nano - fine-tuned for license plate detection (Hugging Face)",
+        "description": "YOLOv8 Nano — fine-tuned for license plate detection",
     },
 }
 
-# These are auto-downloaded by Ultralytics on first use, but we trigger
-# the download here so the user doesn't hit a delay at inference time.
-ULTRALYTICS_MODELS = [
-    "yolov8m.pt",
-    "yolov10n.pt",
-    "rtdetr-l.pt",
-]
+ULTRALYTICS_MODELS = ["yolov8m.pt", "yolo11s.pt"]
+
 
 def download_file(url: str, dest: Path):
-    """Download a file with a progress indicator."""
+    """Download a file with progress."""
     print(f"  Downloading {dest.name} ...")
     print(f"  URL: {url}")
-    urllib.request.urlretrieve(url, str(dest))
-    size_mb = dest.stat().st_size / (1024 * 1024)
-    print(f"  [OK] Saved ({size_mb:.1f} MB)")
+    for attempt in range(3):
+        try:
+            urllib.request.urlretrieve(url, str(dest))
+            size_mb = dest.stat().st_size / (1024 * 1024)
+            print(f"  [OK] Saved ({size_mb:.1f} MB)")
+            return
+        except Exception as e:
+            print(f"  Attempt {attempt+1}/3 failed: {e}")
+    print(f"  [FAIL] Could not download {dest.name}")
 
-def download_huggingface_models():
-    """Download manually-hosted model weights."""
+
+def download_hf_models():
+    """Download models from HuggingFace."""
     os.makedirs(MODELS_DIR, exist_ok=True)
-
-    for filename, info in MODELS.items():
+    for filename, info in HF_MODELS.items():
         dest = MODELS_DIR / filename
         if dest.exists():
             print(f"  [SKIP] {filename} already exists")
@@ -50,32 +51,40 @@ def download_huggingface_models():
         print(f"\n--- {info['description']} ---")
         download_file(info["url"], dest)
 
-def download_ultralytics_models():
-    """Trigger Ultralytics auto-download for COCO-pretrained models."""
-    from ultralytics import YOLO
 
+def download_ultralytics_models():
+    """Trigger Ultralytics auto-download for COCO models."""
+    from ultralytics import YOLO
+    
+    # Ensure ultralytics models are downloaded into the project root
+    # where the script expects them
+    os.chdir(BASE_DIR)
+    
     for model_name in ULTRALYTICS_MODELS:
-        print(f"\n--- Loading {model_name} (Ultralytics will auto-download if needed) ---")
+        print(f"\n--- Loading {model_name} (Ultralytics auto-download) ---")
         try:
             _ = YOLO(model_name)
             print(f"  [OK] {model_name} ready")
         except Exception as e:
-            print(f"  [FAIL] Failed to load {model_name}: {e}")
+            print(f"  [WARN] Could not load {model_name}: {e}")
+
 
 def main():
     print("=" * 60)
-    print("  Multi-Model ANPR - Downloading Pretrained Weights")
+    print("  ANPR Pipeline — Downloading Model Weights")
     print("=" * 60)
-
-    print("\n[1/2] Downloading license-plate-specific model from Hugging Face ...")
-    download_huggingface_models()
-
-    print("\n[2/2] Downloading COCO-pretrained vehicle detection models ...")
+    print(f"\nModels directory: {MODELS_DIR}")
+    
+    print("\n[1/2] License plate model (HuggingFace) ...")
+    download_hf_models()
+    
+    print("\n[2/2] Vehicle detection models (Ultralytics) ...")
     download_ultralytics_models()
-
+    
     print("\n" + "=" * 60)
-    print("  All models downloaded successfully!")
+    print("  All models ready!")
     print("=" * 60)
+
 
 if __name__ == "__main__":
     main()
